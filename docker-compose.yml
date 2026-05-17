@@ -1,13 +1,53 @@
 version: "3.9"
 
+networks:
+  goldnet:
+    driver: bridge
+
 services:
+
+  # ── IB Gateway (headless, auto-login via IBC) ────────────────────────────────
+  # Paper trading port: 4002
+  # VNC debug port: 5900 (password: ver VNC_PASSWORD en .env)
+  ib-gateway:
+    image: ghcr.io/gnzsnz/ib-gateway:stable
+    container_name: ib-gateway
+    restart: always                    # reinicia en crash y en reboot del VPS
+    networks:
+      - goldnet
+    environment:
+      - TWS_USERID=${IB_USERNAME}
+      - TWS_PASSWORD=${IB_PASSWORD}
+      - TRADING_MODE=paper             # paper | live
+      - VNC_SERVER_PASSWORD=${VNC_PASSWORD:-GoldVNC2024}
+      - TWOFA_TIMEOUT_ACTION=restart   # reintentar login si 2FA expira
+      - READ_ONLY_API=no
+    ports:
+      - "4002:4002"   # API paper — goldbot conecta aquí
+      - "5900:5900"   # VNC para debug remoto
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 4002 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s               # IB Gateway tarda ~60s en arrancar
+
+  # ── GoldBot ──────────────────────────────────────────────────────────────────
   goldbot:
     build: .
     container_name: goldbot
-    restart: unless-stopped
-    # network_mode: host permite acceder a IB Gateway en localhost del VPS
-    network_mode: host
+    restart: always
+    depends_on:
+      ib-gateway:
+        condition: service_healthy
+    networks:
+      - goldnet
     env_file: .env
+    environment:
+      - IB_HOST=ib-gateway            # nombre del servicio en la red Docker
+      - IB_PORT=4002                  # paper port de IB Gateway
+      - PYTHONUNBUFFERED=1
+      - TZ=UTC
     volumes:
       - ./data:/app/data
     logging:
@@ -15,6 +55,3 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - TZ=UTC
