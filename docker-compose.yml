@@ -40,13 +40,13 @@ services:
     depends_on:
       ib-gateway:
         condition: service_healthy
-    # host networking: goldbot accede a ib-gateway via 127.0.0.1:4002
-    # IB Gateway solo acepta localhost — esto evita el rechazo por IP foránea
-    network_mode: host
+    # Comparte namespace de red con ib-gateway → 127.0.0.1:4000 es localhost real
+    # IB Gateway (LocalServerPort=4000) solo acepta 127.0.0.1
+    network_mode: "container:ib-gateway"
     env_file: .env
     environment:
       - IB_HOST=127.0.0.1
-      - IB_PORT=4002
+      - IB_PORT=4000
       - PYTHONUNBUFFERED=1
       - TZ=UTC
     volumes:
