@@ -23,10 +23,10 @@ services:
       - TWOFA_TIMEOUT_ACTION=restart   # reintentar login si 2FA expira
       - READ_ONLY_API=no
     ports:
-      - "4002:4002"   # API de IB Gateway (paper port, confirmado via /proc/net/tcp6)
+      - "4004:4004"   # API de IB Gateway (confirmado activo via /proc/net/tcp)
       - "5900:5900"   # VNC para debug remoto
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/4002' 2>/dev/null || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/4004' 2>/dev/null || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 15
@@ -46,7 +46,7 @@ services:
     env_file: .env
     environment:
       - IB_HOST=127.0.0.1
-      - IB_PORT=4002
+      - IB_PORT=4004
       - PYTHONUNBUFFERED=1
       - TZ=UTC
     volumes:
