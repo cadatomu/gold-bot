@@ -23,7 +23,7 @@ services:
       - TWOFA_TIMEOUT_ACTION=restart   # reintentar login si 2FA expira
       - READ_ONLY_API=no
     ports:
-      - "4002:4002"   # API paper — goldbot conecta aquí
+      - "4002:4000"   # host:4002 → container:4000 (LocalServerPort IB Gateway)
       - "5900:5900"   # VNC para debug remoto
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/4002' 2>/dev/null || exit 1"]
