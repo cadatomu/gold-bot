@@ -1,0 +1,47 @@
+# Secrets — never commit
+.env
+*.env
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Data cache — large files, not in VCS
+data/cache/
+data/raw/
+data/ib_cache/
+*.parquet
+*.feather
+*.pkl
+
+# Backtest artifacts
+results/
+notebooks/.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Circuit breaker state (runtime, not config)
+circuit_breaker_state.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log

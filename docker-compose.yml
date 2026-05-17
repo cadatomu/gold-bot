@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  goldbot:
+    build: .
+    container_name: goldbot
+    restart: unless-stopped
+    # network_mode: host permite acceder a IB Gateway en localhost del VPS
+    network_mode: host
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=UTC
