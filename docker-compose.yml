@@ -40,12 +40,13 @@ services:
     depends_on:
       ib-gateway:
         condition: service_healthy
-    networks:
-      - goldnet
+    # host networking: goldbot accede a ib-gateway via 127.0.0.1:4002
+    # IB Gateway solo acepta localhost — esto evita el rechazo por IP foránea
+    network_mode: host
     env_file: .env
     environment:
-      - IB_HOST=ib-gateway            # nombre del servicio en la red Docker
-      - IB_PORT=4002                  # paper port de IB Gateway
+      - IB_HOST=127.0.0.1
+      - IB_PORT=4002
       - PYTHONUNBUFFERED=1
       - TZ=UTC
     volumes:
