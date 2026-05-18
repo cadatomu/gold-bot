@@ -182,8 +182,9 @@ def _process_signal(sig: dict, trader: IBTrader, pos: Position,
     return pos
 
 
-def run_cycle(cfg, state: StateManager, tg: Telegram, last_signal: list) -> None:
-    """Un ciclo completo: descarga datos, gestiona posición, evalúa señal."""
+def run_cycle(cfg, state: StateManager, tg: Telegram, last_signal: list) -> bool:
+    """Un ciclo completo: descarga datos, gestiona posición, evalúa señal.
+    Retorna True si el ciclo corrió sin error de conexión."""
     trader = IBTrader(cfg)
     try:
         trader.connect()
@@ -214,9 +215,11 @@ def run_cycle(cfg, state: StateManager, tg: Telegram, last_signal: list) -> None
         else:
             log.info(f"Misma barra H4 ({bar_time[:16]}) — sin nueva señal")
 
+        return True
     except Exception as e:
         log.error(f"Error en ciclo: {e}", exc_info=True)
         tg.send_error(str(e))
+        return False
     finally:
         trader.disconnect()
 
@@ -232,8 +235,10 @@ def main() -> None:
     state_mgr = StateManager(cfg.state_file)
     tg        = Telegram(cfg.telegram_token, cfg.telegram_chat_id)
 
-    last_signal   = ["Sin señal aún"]
-    daily_summary = [_now_utc().date()]
+    last_signal      = ["Sin señal aún"]
+    daily_summary    = [_now_utc().date()]
+    consecutive_fails = 0
+    MAX_FAILS         = 3
 
     def _handle_stop(sig, frame):
         global _RUNNING
@@ -291,7 +296,14 @@ def main() -> None:
             next_run = now + interval_s
             if not _PAUSED:
                 log.info(f"--- Ciclo [{_now_utc().strftime('%H:%M UTC')}] ---")
-                run_cycle(cfg, state_mgr, tg, last_signal)
+                ok = run_cycle(cfg, state_mgr, tg, last_signal)
+                if ok:
+                    consecutive_fails = 0
+                else:
+                    consecutive_fails += 1
+                    if consecutive_fails >= MAX_FAILS:
+                        log.error(f"{MAX_FAILS} ciclos fallidos consecutivos — saliendo para reinicio Docker")
+                        sys.exit(1)
             else:
                 log.info("Bot pausado — saltando ciclo")
 
